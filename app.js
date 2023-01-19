@@ -228,6 +228,7 @@ const restartGame = () => {
   sessionStorage.removeItem("gameStatus")
   removeSnakeFoodBlock()
   gameOverEle.textContent = ""
+  userScoreEle.textContent = 0
   userGuideEle.textContent = "Press Enter or Space to start the game"
 }
 
@@ -235,14 +236,14 @@ const restartGame = () => {
 //snake key controls function
 const controlSnakeMovementthroughyKeys = (e) => {
  if(sessionStorage.getItem("gameStatus") === "Started"){
-  if (e.keyCode === 37) {
+  if (e.keyCode === 37 && !(localStorage.getItem('direction')=== 'left')) {
     //logic for up arrow key
     moveTheSnake("left");
-  }  else if (e.keyCode === 38) {
+  }  else if (e.keyCode === 38 && !(localStorage.getItem('direction')=== 'up')) {
     moveTheSnake("up");
-  } else if (e.keyCode === 39) {
+  } else if (e.keyCode === 39 && !(localStorage.getItem('direction')=== 'right')) {
     moveTheSnake("right");
-  } else if (e.keyCode === 40) {
+  } else if (e.keyCode === 40 && !(localStorage.getItem('direction')=== 'down')) {
     moveTheSnake("down");
   }
  }
@@ -261,8 +262,20 @@ const controlSnakeMovementthroughyKeys = (e) => {
 
  }
 };
+const throttleClickEvent = (controlSnakeMovementthroughyKeys) => {
+  let allowClickEvent = true;
+  return (e) => {
+    if(allowClickEvent){
+      controlSnakeMovementthroughyKeys(e)
+      allowClickEvent = false
+    }
+    throttleTimer = setTimeout(() => {
+      allowClickEvent = true
+    },300)
+  }
+}
 //make it move
-document.addEventListener("keydown", controlSnakeMovementthroughyKeys);
+document.addEventListener("keydown", throttleClickEvent(controlSnakeMovementthroughyKeys));
 //update the user score based on the timer and updates the score text as well
 function updateUserScoreWhenGameStarted(updateUserScore) {
   if (localStorage.getItem('snakeFoodId') && sessionStorage.getItem('gameStatus') === "Started") {
