@@ -24,6 +24,7 @@ const generateBoxEnvironment = (width, height) => {
     table.appendChild(singleRow);
   }
   mainContainer.appendChild(table);
+
 };
 generateBoxEnvironment(30, 20);
 //generates snake with no.of blocks
@@ -38,6 +39,7 @@ generateSnake(5);
 //cleans state values for every start
 const cleanPreviousState = () =>{
   localStorage.removeItem("direction");
+  localStorage.removeItem("gameStatus");
 }
 //move the snake with arrow keys direction
 const moveTheSnake = (direction) => {
@@ -81,32 +83,8 @@ const moveTheSnake = (direction) => {
     localStorage.setItem('snakeFoodId',foodTimeoutId)
   };
   const removeSnakeFood = () => {
-    const snakeFoodItem = document.getElementById(
-      localStorage.getItem("snakeFood")
-    );
-    snakeFoodItem && snakeFoodItem.classList.remove("foodBlock");
-    localStorage.removeItem("snakeFood");
-    if(localStorage.getItem('snakeFoodId')) {
-        let singleFoodTime = Date.now() - userScoreTimer
-        if(singleFoodTime < 10000){
-          updateUserScore(10)    
-        }
-        else if (20000 > singleFoodTime && singleFoodTime > 10000){
-          updateUserScore(8)
-        }
-        else if (30000 > singleFoodTime && singleFoodTime > 20000){
-          updateUserScore(5)
-        }
-        else if (40000 > singleFoodTime && singleFoodTime > 30000){
-          updateUserScore(3)
-        } else if (50000 > singleFoodTime && singleFoodTime > 40000){
-          updateUserScore(1)
-        }
-        
-        clearTimeout(localStorage.getItem('snakeFoodId'))
-        localStorage.removeItem('snakeFoodId')
-        userScoreEle.textContent = `${localStorage.getItem('userScore')? localStorage.getItem('userScore'): 0}`
-    }
+    removeSnakeFoodBlock();
+    updateUserScoreWhenGameStarted(updateUserScore);
 
   }
   //function to handle game over events
@@ -114,9 +92,7 @@ const moveTheSnake = (direction) => {
       gameOverEle.textContent = "Game Over";      
       clearInterval(localStorage.getItem("timerId"))
       clearInterval(localStorage.getItem("snakeFoodId"))
-      localStorage.removeItem("lastnode");
-      localStorage.removeItem("snakeFood");
-      removeSnakeFood()
+      localStorage.setItem("gameStatus", "Ended")
   }
   
   if (!localStorage.getItem("snakeFood")) {
@@ -156,7 +132,7 @@ const moveTheSnake = (direction) => {
       localStorage.setItem("timerId", setIntervalId);
       localStorage.setItem("direction", direction);
     }
-    
+
     //get the snake current head coordinates
     const snakeHeadCords = currentCordinates[currentCordinates.length - 1] && currentCordinates[currentCordinates.length - 1].split("-");
 
@@ -192,7 +168,7 @@ const moveTheSnake = (direction) => {
       if (snakeHead) {
         snakeHead.classList.remove("snakeHead");
       }
-      //remove the snake from enviroment
+      //remove the snake from environment
       currentCordinates.forEach((id) => {
         const snakeId = document.getElementById(id);
         snakeId.classList.remove("snakeBlock");
@@ -223,9 +199,7 @@ const moveTheSnake = (direction) => {
           JSON.stringify(currentCordinates)
         );
         removeSnakeFood()
-        clearTimeout(generateFoodForSnake)
         generateFoodForSnake();
-
         if(Number(localStorage.getItem('userScore'))>Number(localStorage.getItem('highestScore'))){
           localStorage.setItem("highestScore", localStorage.getItem('userScore'))
           highScoreEle.textContent = localStorage.getItem("highestScore")
@@ -239,24 +213,82 @@ const moveTheSnake = (direction) => {
     }
   }, 300);
 };
+const restartGame = () => {
+  JSON.parse(localStorage.getItem("snakePrevCords")).forEach((snakeBlock) => {
+    const getSnakeBlockEle = document.getElementById(snakeBlock)
+    getSnakeBlockEle.classList.remove("snakeBlock")
+  })
+  const snakeHead = document.getElementById(localStorage.getItem("lastnode"))
+  snakeHead.classList.remove("snakeHead")
+  snakeHead.classList.remove("snakeBlock")
+  generateSnake(5);
+  localStorage.removeItem("gameStatus")
+  removeSnakeFoodBlock()
+  gameOverEle.textContent = ""
+}
+
 
 //snake key controls function
 const controlSnakeMovementthroughyKeys = (e) => {
+ if(localStorage.getItem("gameStatus") === "Started"){
   if (e.keyCode === 37) {
     //logic for up arrow key
     moveTheSnake("left");
-  } else if ((e.keyCode === 13) | (e.keyCode === 32)) {
-    //logic to start and stop the snake
-    cleanPreviousState()
-    moveTheSnake("start");
-  } else if (e.keyCode === 38) {
+  }  else if (e.keyCode === 38) {
     moveTheSnake("up");
   } else if (e.keyCode === 39) {
     moveTheSnake("right");
   } else if (e.keyCode === 40) {
     moveTheSnake("down");
   }
+ }
+ else if (localStorage.getItem("gameStatus") === "Ended"){
+  if ((e.keyCode === 13) | (e.keyCode === 32)) {
+    restartGame()
+  }
+ }
+ else {
+   if ((e.keyCode === 13) | (e.keyCode === 32)) {
+    //logic to start and stop the snake
+    cleanPreviousState()
+    localStorage.setItem("gameStatus", "Started")
+    moveTheSnake("start");
+  }
+
+ }
 };
 //make it move
 document.addEventListener("keydown", controlSnakeMovementthroughyKeys);
+//update the user score based on the timer and updates the score text as well
+function updateUserScoreWhenGameStarted(updateUserScore) {
+  if (localStorage.getItem('snakeFoodId') && localStorage.getItem('gameStatus') === "Started") {
+    let singleFoodTime = Date.now() - userScoreTimer;
+    if (singleFoodTime < 10000) {
+      updateUserScore(10);
+    }
+    else if (20000 > singleFoodTime && singleFoodTime > 10000) {
+      updateUserScore(8);
+    }
+    else if (30000 > singleFoodTime && singleFoodTime > 20000) {
+      updateUserScore(5);
+    }
+    else if (40000 > singleFoodTime && singleFoodTime > 30000) {
+      updateUserScore(3);
+    } else if (50000 > singleFoodTime && singleFoodTime > 40000) {
+      updateUserScore(1);
+    }
+
+    clearTimeout(localStorage.getItem('snakeFoodId'));
+    localStorage.removeItem('snakeFoodId');
+    userScoreEle.textContent = `${localStorage.getItem('userScore') ? localStorage.getItem('userScore') : 0}`;
+  }
+}
+//removes snake Food block when it's not needed on the screen
+function removeSnakeFoodBlock() {
+  const snakeFoodItem = document.getElementById(
+    localStorage.getItem("snakeFood")
+  );
+  snakeFoodItem && snakeFoodItem.classList.remove("foodBlock");
+  localStorage.removeItem("snakeFood");
+}
 
