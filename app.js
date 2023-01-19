@@ -2,6 +2,8 @@ const mainContainer = document.querySelector("#main-container");
 const userScoreEle = document.querySelector("#user-score")
 const highScoreEle = document.querySelector("#high-score")
 const gameOverEle = document.querySelector('#game-over')
+const userGuideEle = document.querySelector('#user-guide-text')
+
 userScoreEle.textContent = 0
 if(!localStorage.getItem("highestScore")){
   localStorage.setItem("highestScore", 0)
@@ -39,7 +41,6 @@ generateSnake(5);
 //cleans state values for every start
 const cleanPreviousState = () =>{
   localStorage.removeItem("direction");
-  localStorage.removeItem("gameStatus");
 }
 //move the snake with arrow keys direction
 const moveTheSnake = (direction) => {
@@ -67,6 +68,7 @@ const moveTheSnake = (direction) => {
   if (localStorage.getItem("direction") === "start") {
     localStorage.removeItem("snakeFood");
     localStorage.removeItem("snakeFoodId");
+    userGuideEle.textContent = ''
   }
   const generateFoodForSnake = () => {
     foodLocationId = `${parseInt(Math.random() * (20 - 1) + 1)}-${parseInt(
@@ -92,7 +94,8 @@ const moveTheSnake = (direction) => {
       gameOverEle.textContent = "Game Over";      
       clearInterval(localStorage.getItem("timerId"))
       clearInterval(localStorage.getItem("snakeFoodId"))
-      localStorage.setItem("gameStatus", "Ended")
+      sessionStorage.setItem("gameStatus", "Ended")
+      userGuideEle.textContent = "Press Enter or Space to Play Again"
   }
   
   if (!localStorage.getItem("snakeFood")) {
@@ -214,23 +217,24 @@ const moveTheSnake = (direction) => {
   }, 300);
 };
 const restartGame = () => {
-  JSON.parse(localStorage.getItem("snakePrevCords")).forEach((snakeBlock) => {
+  localStorage.getItem("snakePrevCords") && JSON.parse(localStorage.getItem("snakePrevCords")).forEach((snakeBlock) => {
     const getSnakeBlockEle = document.getElementById(snakeBlock)
     getSnakeBlockEle.classList.remove("snakeBlock")
   })
   const snakeHead = document.getElementById(localStorage.getItem("lastnode"))
-  snakeHead.classList.remove("snakeHead")
-  snakeHead.classList.remove("snakeBlock")
+  snakeHead && snakeHead.classList.remove("snakeHead")
+  snakeHead && snakeHead.classList.remove("snakeBlock")
   generateSnake(5);
-  localStorage.removeItem("gameStatus")
+  sessionStorage.removeItem("gameStatus")
   removeSnakeFoodBlock()
   gameOverEle.textContent = ""
+  userGuideEle.textContent = "Press Enter or Space to start the game"
 }
 
 
 //snake key controls function
 const controlSnakeMovementthroughyKeys = (e) => {
- if(localStorage.getItem("gameStatus") === "Started"){
+ if(sessionStorage.getItem("gameStatus") === "Started"){
   if (e.keyCode === 37) {
     //logic for up arrow key
     moveTheSnake("left");
@@ -242,7 +246,7 @@ const controlSnakeMovementthroughyKeys = (e) => {
     moveTheSnake("down");
   }
  }
- else if (localStorage.getItem("gameStatus") === "Ended"){
+ else if (sessionStorage.getItem("gameStatus") === "Ended"){
   if ((e.keyCode === 13) | (e.keyCode === 32)) {
     restartGame()
   }
@@ -251,7 +255,7 @@ const controlSnakeMovementthroughyKeys = (e) => {
    if ((e.keyCode === 13) | (e.keyCode === 32)) {
     //logic to start and stop the snake
     cleanPreviousState()
-    localStorage.setItem("gameStatus", "Started")
+    sessionStorage.setItem("gameStatus", "Started")
     moveTheSnake("start");
   }
 
@@ -261,7 +265,7 @@ const controlSnakeMovementthroughyKeys = (e) => {
 document.addEventListener("keydown", controlSnakeMovementthroughyKeys);
 //update the user score based on the timer and updates the score text as well
 function updateUserScoreWhenGameStarted(updateUserScore) {
-  if (localStorage.getItem('snakeFoodId') && localStorage.getItem('gameStatus') === "Started") {
+  if (localStorage.getItem('snakeFoodId') && sessionStorage.getItem('gameStatus') === "Started") {
     let singleFoodTime = Date.now() - userScoreTimer;
     if (singleFoodTime < 10000) {
       updateUserScore(10);

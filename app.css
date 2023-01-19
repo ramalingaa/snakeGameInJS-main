@@ -40,7 +40,7 @@
   font-weight: 600;
 
 }
-#game-over {
+.game-over {
   text-align: center;
   font-size: 2rem;
   color: red;
